@@ -10,7 +10,7 @@
     "hash-password": "node scripts/hash-password.mjs"
   },
   "engines": {
-    "node": ">=18.19.0"
+    "node": ">=20.0.0"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
