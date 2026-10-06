@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>devi</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/devi-tab-icon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/devi-tab-icon-16.png">
+    <link rel="apple-touch-icon" href="/assets/devi-icon-cropped-192.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="stylesheet" href="/vendor/xterm.css">
+    <link rel="stylesheet" href="/styles.css?v=20260827-project-diff">
+  </head>
+  <body>
+    <div id="app" class="devai-shell" data-theme="dark" hidden>
+      <aside id="sidebar" class="sidebar" data-sidebar data-scroll>
+        <div class="brand-row">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span class="brand-name">devi</span>
+          <span class="version-pill">0.4.2</span>
+        </div>
+
+        <div class="new-chat-wrap">
+          <button id="newRoomButton" class="new-chat-button" type="button">
+            <span class="plus-mark" aria-hidden="true">+</span>
+            <span>새 채팅</span>
+            <span class="shortcut">Ctrl N</span>
+          </button>
+        </div>
+
+        <div id="roomList" class="room-list" data-scroll aria-label="채팅방 목록"></div>
+
+        <div class="sidebar-footer">
+          <button id="settingsButton" class="profile-row" type="button">
+            <span id="profileAvatar" class="profile-avatar">DE</span>
+            <span class="profile-copy">
+              <span id="profileName" class="profile-name">devi</span>
+              <span id="profileSub" class="profile-sub">Unipass 연결됨</span>
+            </span>
+            <span class="settings-gear" aria-hidden="true">⚙</span>
+          </button>
+          <div class="theme-switch" aria-label="테마">
+            <button id="setDarkButton" class="active" type="button">다크</button>
+            <button id="setLightButton" type="button">라이트</button>
+          </div>
+        </div>
+      </aside>
+
+      <button id="sidebarBackdrop" class="sidebar-backdrop" type="button" aria-label="사이드바 닫기"></button>
+
+      <main class="workspace">
+        <header class="topbar">
+          <button id="mobileMenuButton" class="mobile-menu" type="button" aria-label="사이드바 열기">
+            <span></span>
+          </button>
+          <div class="topbar-title">
+            <div id="roomTitle" class="active-title">devi</div>
+            <div id="roomMeta" class="active-meta">새 채팅방을 만들거나 기존 방을 선택하세요.</div>
+          </div>
+          <div class="topbar-actions">
+            <span id="roomStatus" class="run-pill">방을 선택하세요</span>
+            <button id="roomSettingsButton" class="toolbar-button room-settings-button" type="button" disabled>채팅 설정</button>
+            <button id="refreshButton" class="toolbar-button" type="button">새로고침</button>
+            <button id="startButton" class="toolbar-button" type="button" disabled>시작</button>
+            <button id="stopButton" class="toolbar-button danger" type="button" disabled>중단</button>
+            <a id="downloadLogButton" class="toolbar-button disabled" href="#" aria-disabled="true">로그</a>
+          </div>
+        </header>
+
+        <section id="stream" class="stream" data-scroll>
+          <div class="stream-inner">
+            <div id="historyTopLoader" class="history-top-loader" hidden>
+              <span aria-hidden="true"></span>
+              <span>이전 기록 불러오는 중</span>
+            </div>
+
+            <section id="emptyState" class="empty-state">
+              <span class="empty-mark" aria-hidden="true"></span>
+              <div>
+                <h1>무엇을 만들까요?</h1>
+                <p>이 채팅의 목적을 정해두면 컨텍스트가 섞이지 않습니다.</p>
+              </div>
+              <div class="suggestions">
+                <button type="button" data-suggestion="현재 저장소 상태 점검해줘">현재 저장소 상태 점검</button>
+                <button type="button" data-suggestion="테스트 실패 원인부터 찾아줘">테스트 실패 원인 찾기</button>
+                <button type="button" data-suggestion="변경 사항을 리뷰해줘">변경 사항 리뷰</button>
+              </div>
+            </section>
+
+            <section id="roomLoadingState" class="room-loading-state" hidden>
+              <span class="room-loading-spinner" aria-hidden="true"></span>
+              <div>
+                <strong>채팅 기록 불러오는 중</strong>
+                <span>최근 대화부터 준비하고 있습니다.</span>
+              </div>
+            </section>
+
+            <section id="messageList" class="message-list" aria-live="polite" hidden></section>
+
+            <section id="terminalCard" class="raw-terminal-sink" aria-hidden="true">
+              <button id="terminalToggle" class="shell-head" type="button" aria-expanded="true">
+                <span id="terminalIcon" class="shell-icon">›</span>
+                <span id="terminalCommand" class="shell-command">$ devi session</span>
+                <span id="terminalSummary" class="shell-summary">대기 중</span>
+                <span class="caret">▶</span>
+              </button>
+              <div id="terminalPanel" class="terminal-panel">
+                <div id="terminal" class="terminal"></div>
+              </div>
+            </section>
+
+            <section class="activity-trail">
+              <header>
+                <span>세션 기록</span>
+                <span id="activityCount">0 events</span>
+              </header>
+              <div id="activityList" class="activity-list" data-scroll></div>
+            </section>
+          </div>
+        </section>
+
+        <form id="composer" class="composer-shell">
+          <div id="composerMenu" class="composer-menu" data-scroll hidden></div>
+          <div class="composer-meta">
+            <span id="agentLabel" hidden>Codex</span>
+            <span class="divider" hidden></span>
+            <span id="modeLabel" hidden>3. Full access</span>
+            <span id="contextLabel">컨텍스트 준비됨</span>
+          </div>
+          <div id="queuedPromptTray" class="queued-prompt-tray" hidden></div>
+          <div id="attachmentTray" class="attachment-tray" hidden></div>
+          <textarea id="promptInput" rows="1" placeholder="무엇을 만들까요?  /  로 커맨드,  @  로 파일" disabled></textarea>
+          <div class="composer-actions">
+            <input id="attachmentInput" type="file" multiple hidden>
+            <button id="attachButton" class="mini-button attach-button" type="button" title="파일 첨부" aria-label="파일 첨부">+</button>
+            <button class="mini-button" type="button" data-insert="@">@</button>
+            <button class="mini-button" type="button" data-insert="/">/</button>
+            <button id="agentMenuButton" class="mini-button agent-menu-button" type="button">Codex ▾</button>
+            <button id="modelMenuButton" class="mini-button model-menu-button" type="button">…</button>
+            <button id="effortMenuButton" class="mini-button effort-menu-button" type="button">…</button>
+            <button id="modeMenuButton" class="mini-button mode-menu-button" type="button">
+              <span class="mode-dot" aria-hidden="true"></span>
+              <span id="modeMenuText">Full ▾</span>
+            </button>
+            <button id="ctrlCButton" class="mini-button" type="button" disabled>Ctrl+C</button>
+            <button id="escapeButton" class="mini-button" type="button" disabled>Esc</button>
+            <button id="sendButton" class="send-button" type="submit" disabled>↑</button>
+          </div>
+          <div class="composer-hint">Enter 전송 · Shift+Enter 줄바꿈 · Esc 중단</div>
+        </form>
+      </main>
+
+      <button id="agentActivityDrawerBackdrop" class="agent-activity-drawer-backdrop" type="button" aria-label="상세 로그 닫기" hidden></button>
+      <aside id="agentActivityDrawer" class="agent-activity-drawer" aria-labelledby="agentActivityDrawerTitle" aria-hidden="true" hidden>
+        <header class="agent-activity-drawer-head">
+          <div>
+            <span>Agent Activity</span>
+            <strong id="agentActivityDrawerTitle">상세 로그</strong>
+          </div>
+          <button id="closeAgentActivityDrawer" class="icon-lite" type="button" aria-label="상세 로그 닫기">×</button>
+        </header>
+        <div id="agentActivityDrawerBody" class="agent-activity-drawer-body" data-scroll></div>
+      </aside>
+    </div>
+
+    <main id="loginView" class="login-overlay" data-theme="dark" hidden>
+      <form id="loginForm" class="login-card" action="/auth/start" method="get">
+        <div class="login-brand">
+          <span class="login-mark" aria-hidden="true"></span>
+          <div>
+            <h1>devi에 로그인</h1>
+            <p>Unipass 계정으로 브라우저에서 이어서 씁니다.</p>
+          </div>
+        </div>
+        <input id="loginNextInput" type="hidden" name="next" value="/">
+        <button id="loginButton" class="unipass-button" type="submit" autofocus>
+          Unipass로 로그인
+        </button>
+        <div id="loginError" class="form-error" role="alert"></div>
+        <div class="agent-status">
+          <span></span>
+          <span>로컬 에이전트 · devi 연결됨</span>
+        </div>
+      </form>
+
+      <div class="login-theme-switch" aria-label="테마">
+        <button id="loginDarkButton" class="active" type="button">다크</button>
+        <button id="loginLightButton" type="button">라이트</button>
+      </div>
+    </main>
+
+    <dialog id="newRoomDialog">
+      <form id="newRoomForm" method="dialog" class="dialog-panel">
+        <header>
+          <h2>새 채팅</h2>
+          <button id="closeNewRoomButton" class="icon-lite" title="닫기" type="button">×</button>
+        </header>
+        <label>
+          이름
+          <input id="roomNameInput" name="title" maxlength="80" placeholder="비워두면 첫 메시지로 정해집니다.">
+        </label>
+        <label>
+          CLI
+          <select id="agentInput" name="agent">
+            <option value="codex">Codex</option>
+            <option value="claude">Claude</option>
+          </select>
+        </label>
+        <label>
+          작업 디렉터리
+          <div class="workdir-picker">
+            <div class="workdir-input-shell">
+              <span class="workdir-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path d="M3 7.5a2.5 2.5 0 0 1 2.5-2.5h4l2 2h7A2.5 2.5 0 0 1 21 9.5v7A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5Z"></path>
+                </svg>
+              </span>
+              <input id="cwdInput" name="cwd" value="/workspace" autocomplete="off" spellcheck="false">
+            </div>
+            <div id="cwdQuickPicks" class="workdir-quick-picks" aria-label="추천 작업 디렉터리"></div>
+          </div>
+        </label>
+        <label>
+          첫 메시지
+          <textarea id="initialPromptInput" name="initialPrompt" rows="4" placeholder="선택 사항"></textarea>
+        </label>
+        <footer>
+          <button type="button" id="cancelNewRoomButton">취소</button>
+          <button class="primary-action" type="submit">만들기</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="deleteRoomDialog">
+      <div class="dialog-panel delete-dialog-panel">
+        <header class="delete-dialog-head">
+          <span class="delete-dialog-icon" aria-hidden="true">!</span>
+          <span class="delete-dialog-heading">
+            <h2>채팅 삭제</h2>
+            <span>휴지통으로 이동</span>
+          </span>
+          <button id="closeDeleteRoomButton" class="icon-lite" title="닫기" aria-label="닫기" type="button">×</button>
+        </header>
+        <div class="delete-dialog-copy">
+          <span id="deleteRoomTitle" class="delete-dialog-title">채팅방</span>
+          <span id="deleteRoomMeta" class="delete-dialog-meta">이 채팅방을 휴지통으로 이동합니다.</span>
+        </div>
+        <footer>
+          <button id="cancelDeleteRoomButton" type="button">취소</button>
+          <button id="confirmDeleteRoomButton" class="danger-action" type="button">삭제</button>
+        </footer>
+      </div>
+    </dialog>
+
+    <dialog id="settingsDialog" class="settings-dialog">
+      <div class="settings-panel" data-scroll>
+        <header class="settings-head">
+          <span>전역 설정</span>
+          <span id="settingsActiveTitle">devi</span>
+          <button id="closeSettingsButton" class="icon-lite" title="닫기" type="button">×</button>
+        </header>
+
+        <div class="settings-layout">
+          <nav class="settings-side" aria-label="전역 설정 메뉴">
+            <button class="settings-nav-item active" type="button" data-settings-panel="general">일반</button>
+            <button class="settings-nav-item" type="button" data-settings-panel="trash">
+              <span>휴지통</span>
+              <span id="settingsTrashCount" class="settings-nav-count">0</span>
+            </button>
+          </nav>
+
+          <div class="settings-content">
+            <div id="settingsGeneralPanel" class="settings-pane">
+              <div class="settings-body">
+                <section class="settings-section">
+                  <div class="settings-section-title">계정</div>
+                  <div class="settings-table">
+                    <div class="settings-table-row">
+                      <span>로그인</span>
+                      <code id="settingsUserLabel">devi · Unipass</code>
+                    </div>
+                    <div class="settings-table-row">
+                      <span>현재 테마</span>
+                      <code id="settingsThemeLabel">dark</code>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="settings-section">
+                  <div class="settings-section-title settings-section-title--actions">
+                    <span>파일 저장공간</span>
+                    <button id="storageRefreshButton" class="settings-inline-button" type="button">새로고침</button>
+                  </div>
+                  <div class="storage-usage-card">
+                    <div class="storage-usage-heading">
+                      <strong id="storageUsageLabel">확인 전</strong>
+                      <span id="storageUsagePercent">—</span>
+                    </div>
+                    <div class="storage-usage-track" role="progressbar" aria-label="첨부파일 저장공간 사용량" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                      <span id="storageUsageBar"></span>
+                    </div>
+                    <div class="storage-usage-meta">
+                      <span id="storageRetentionLabel">휴지통과 임시 파일 보존 정책을 확인합니다.</span>
+                      <span id="storageFileCount">—</span>
+                    </div>
+                  </div>
+                </section>
+
+                <p class="settings-note">좌측 프로필 설정은 계정과 앱 전체 설정만 다룹니다. 현재 채팅방의 실행 권한, 작업 디렉터리, 로그는 채팅 화면 우측 상단의 채팅 설정에서 확인합니다.</p>
+
+                <footer class="settings-account">
+                  <span>Unipass 연결됨</span>
+                  <button id="logoutButton" type="button">로그아웃</button>
+                </footer>
+              </div>
+            </div>
+
+            <div id="settingsTrashPanel" class="settings-pane" hidden>
+              <div class="settings-body">
+                <section class="settings-section">
+                  <div class="settings-section-title">휴지통</div>
+                  <div id="settingsTrashList" class="settings-trash-list"></div>
+                </section>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="roomSettingsDialog" class="settings-dialog">
+      <div class="settings-panel" data-scroll>
+        <header class="settings-head">
+          <span>채팅 설정</span>
+          <span id="roomSettingsActiveTitle">devi</span>
+          <button id="closeRoomSettingsButton" class="icon-lite" title="닫기" type="button">×</button>
+        </header>
+
+        <div class="settings-body">
+          <section class="settings-section">
+            <div class="settings-section-title">실행 권한 모드 · 서버 고정</div>
+            <div class="settings-mode-list">
+              <button class="settings-mode-card" type="button" data-settings-mode="ask" disabled aria-disabled="true">
+                <span class="settings-radio"><span></span></span>
+                <span>
+                  <span>1. Ask for approval</span>
+                  <span>현재 서버에서는 비활성화되어 있습니다. Codex sandbox가 bwrap 권한 문제로 실패합니다.</span>
+                </span>
+              </button>
+              <button class="settings-mode-card" type="button" data-settings-mode="auto" disabled aria-disabled="true">
+                <span class="settings-radio"><span></span></span>
+                <span>
+                  <span>2. Approve for me</span>
+                  <span>현재 서버에서는 비활성화되어 있습니다. Codex sandbox가 bwrap 권한 문제로 실패합니다.</span>
+                </span>
+              </button>
+              <button class="settings-mode-card active" type="button" data-settings-mode="full">
+                <span class="settings-radio"><span></span></span>
+                <span>
+                  <span>3. Full access</span>
+                  <span>현재 devi 서버의 실제 Codex 실행 모드입니다. --dangerously-bypass-approvals-and-sandbox</span>
+                </span>
+              </button>
+            </div>
+          </section>
+
+          <section class="settings-section">
+            <div class="settings-section-title">샌드박스</div>
+            <div class="settings-table">
+              <div class="settings-table-row">
+                <span>
+                  <span>작업 디렉터리</span>
+                  <span>다음 턴부터 적용</span>
+                </span>
+                <div class="settings-workdir-control">
+                  <div class="workdir-input-shell">
+                    <span class="workdir-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M3 7.5a2.5 2.5 0 0 1 2.5-2.5h4l2 2h7A2.5 2.5 0 0 1 21 9.5v7A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5Z"></path>
+                      </svg>
+                    </span>
+                    <input id="roomSettingsWorkDirInput" value="/workspace" autocomplete="off" spellcheck="false">
+                  </div>
+                  <button id="roomSettingsWorkDirSave" class="toolbar-button" type="button" disabled>저장</button>
+                  <div id="roomSettingsWorkDirQuickPicks" class="workdir-quick-picks settings-workdir-picks" aria-label="추천 작업 디렉터리"></div>
+                  <span id="roomSettingsWorkDirStatus" class="settings-inline-status"></span>
+                </div>
+              </div>
+              <div class="settings-table-row">
+                <span>
+                  <span>네트워크 접근</span>
+                  <span>패키지 설치와 외부 요청 허용</span>
+                </span>
+                <button class="settings-toggle active" type="button" data-settings-toggle="network" aria-pressed="true" aria-disabled="true" disabled><span></span></button>
+              </div>
+              <div class="settings-table-row">
+                <span>
+                  <span>작업 디렉터리 밖 쓰기</span>
+                  <span>현재 작업 디렉터리 밖의 파일 수정</span>
+                </span>
+                <button class="settings-toggle active" type="button" data-settings-toggle="outside" aria-pressed="true" aria-disabled="true" disabled><span></span></button>
+              </div>
+              <div class="settings-table-row">
+                <span>거부 목록</span>
+                <code class="settings-deny-list">rm -rf, git push --force</code>
+              </div>
+            </div>
+          </section>
+
+          <p class="settings-note">현재 서버에서는 Codex sandbox가 bwrap 권한 문제로 실패해서 Full access로 고정됩니다. 이 화면은 선택 가능한 권한 설정이 아니라 실제 서버 실행 정책을 표시합니다.</p>
+
+          <footer class="settings-account">
+            <span id="roomSettingsAgentLabel">Codex</span>
+            <a id="roomSettingsDownloadLog" class="toolbar-button disabled" href="#" aria-disabled="true">로그 다운로드</a>
+          </footer>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="imageLightbox" class="image-lightbox" aria-labelledby="imageLightboxTitle">
+      <div class="image-lightbox-panel">
+        <header class="image-lightbox-head">
+          <span class="image-lightbox-copy">
+            <strong id="imageLightboxTitle">이미지 미리보기</strong>
+            <small>배경을 클릭하거나 Esc를 눌러 닫을 수 있습니다.</small>
+          </span>
+          <span class="image-lightbox-actions">
+            <a id="imageLightboxOpen" href="#" target="_blank" rel="noreferrer">새 탭에서 열기</a>
+            <button id="closeImageLightboxButton" type="button" aria-label="이미지 미리보기 닫기">×</button>
+          </span>
+        </header>
+        <div id="imageLightboxStage" class="image-lightbox-stage">
+          <img id="imageLightboxImage" alt="">
+        </div>
+      </div>
+    </dialog>
+
+    <script src="/vendor/xterm.js"></script>
+    <script src="/vendor/addon-fit.js"></script>
+    <script type="module" src="/app.js?v=20260827-project-diff"></script>
+  </body>
+</html>

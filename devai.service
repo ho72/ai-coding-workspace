@@ -1,0 +1,17 @@
+[Unit]
+Description=Devi web coding workspace
+After=network.target
+
+[Service]
+Type=simple
+User=devi
+Group=devi
+WorkingDirectory=/opt/devi
+EnvironmentFile=/opt/devi/.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm start
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

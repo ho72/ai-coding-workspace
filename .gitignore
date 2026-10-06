@@ -1,0 +1,25 @@
+node_modules/
+data/
+.env
+.env.*
+!.env.example
+*.log
+*.pid
+dist/
+build/
+coverage/
+.cache/
+.DS_Store
+.idea/
+.vscode/
+
+# Agent account state and personal configuration
+.codex/
+.claude/
+.config/
+auth.json
+credentials.json
+*.pem
+*.key
+*.p12
+*.pfx
